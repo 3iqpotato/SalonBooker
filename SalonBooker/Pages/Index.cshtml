@@ -1,0 +1,143 @@
+﻿@page
+@model IndexModel
+@using Microsoft.AspNetCore.Identity
+@using SalonBooker.Models
+@using SalonBooker.Data
+@using Microsoft.EntityFrameworkCore
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@inject ApplicationDbContext DbContext
+@{
+    ViewData["Title"] = "Начало";
+
+    var currentUserForButton = await UserManager.GetUserAsync(User);
+    bool isUserBarber = false;
+
+    if (currentUserForButton != null)
+    {
+        isUserBarber = await DbContext.Barbers.AnyAsync(b => b.UserId == currentUserForButton.Id);
+    }
+}
+
+<div class="container mt-4">
+
+    <!-- Съобщения от TempData (от пренасочвания) -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            ✅ @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            ❌ @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Hero секция -->
+    <div class="row align-items-center bg-light rounded-4 p-5 mb-5">
+        <div class="col-lg-6">
+            <h1 class="display-4 fw-bold">Добре дошли в Salon Booker</h1>
+            <p class="lead mt-3">
+                Вашият професионален фризьорски салон. Резервирайте час лесно и бързо.
+            </p>
+
+            @if (SignInManager.IsSignedIn(User) && !isUserBarber)
+            {
+                @if (Model.CannotBookReason != null)
+                {
+                    <!-- Показваме защо не може да резервира -->
+                    <div class="alert alert-warning mt-3 mb-2">
+                        ⚠️ @Model.CannotBookReason
+                    </div>
+                    <button class="btn btn-secondary btn-lg" disabled>Запази час</button>
+                }
+                else
+                {
+                    <a asp-page="/Appointments/Create" class="btn btn-primary btn-lg mt-3">Запази час</a>
+                }
+            }
+            else if (!SignInManager.IsSignedIn(User))
+            {
+                <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-primary btn-lg mt-3">Влезте, за да запазите час</a>
+            }
+        </div>
+        <div class="col-lg-6 text-center">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTJuzFu-Ht9H6ysPGpaL6tlCQr-yYgPfIFR8A&s" alt="Салон" class="img-fluid rounded-3">
+        </div>
+    </div>
+
+    <!-- Информация за салона -->
+    <div class="row mb-5">
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h3>📍 Адрес</h3>
+                    <p class="card-text">ул. "Главна" 123<br>София 1000</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h3>🕐 Работно време</h3>
+                    <p class="card-text">Понеделник - Събота<br>09:00 - 18:00</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h3>📞 Телефон</h3>
+                    <p class="card-text">+359 888 123 456<br>info@salonbooker.com</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Списък с фризьори -->
+    <h2 class="text-center mb-4">Нашите фризьори</h2>
+    <div class="row mb-5">
+        @if (Model.Barbers.Any())
+        {
+            @foreach (var barber in Model.Barbers)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        @if (!string.IsNullOrEmpty(barber.ProfileImageUrl))
+                        {
+                            <img src="@barber.ProfileImageUrl" class="card-img-top" alt="@barber.User?.FullName" style="height: 200px; object-fit: cover;">
+                        }
+                        else
+                        {
+                            <img src="https://via.placeholder.com/300x200?text=Barber" class="card-img-top" alt="Фризьор" style="height: 200px; object-fit: cover;">
+                        }
+                        <div class="card-body">
+                            <h5 class="card-title">@(barber.User?.FullName ?? barber.User?.UserName)</h5>
+                            <p class="card-text">@(string.IsNullOrEmpty(barber.Bio) ? "Професионален фризьор" : barber.Bio)</p>
+                            <h6>Услуги:</h6>
+                            <ul class="list-unstyled">
+                                @foreach (var bs in barber.BarberServices)
+                                {
+                                    <li>✂️ @bs.Service.Name - @bs.Service.Price лв.</li>
+                                }
+                            </ul>
+                        </div>
+                        <div class="card-footer bg-transparent border-0 pb-3">
+                            <a asp-page="/Barbers/Details" asp-route-id="@barber.Id" class="btn btn-outline-primary w-100">Виж профила</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center">
+                <p>Все още няма добавени фризьори. Очаквайте скоро!</p>
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,280 @@
+﻿@page
+@model CreateModel
+@{
+    ViewData["Title"] = "Нова резервация";
+}
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">📅 Нова резервация</h2>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+
+                    <!-- Стъпка 1: Избор на фризьор -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">1. Изберете фризьор</label>
+                        <select id="barberSelect" class="form-select" asp-for="SelectedBarberId" asp-items="Model.Barbers">
+                            <option value="">-- Изберете фризьор --</option>
+                        </select>
+                    </div>
+
+                    <!-- Стъпка 2: Избор на услуга -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">2. Изберете услуга</label>
+                        <select id="serviceSelect" class="form-select" disabled>
+                            <option value="">-- Първо изберете фризьор --</option>
+                        </select>
+                    </div>
+
+                    <!-- Стъпка 3: Избор на дата -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">3. Изберете дата</label>
+                        <input type="date" id="datePicker" class="form-control" disabled min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                    </div>
+
+                    <!-- Стъпка 4: Избор на час -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">4. Изберете час</label>
+                        <div id="timeSlotsContainer" class="d-flex flex-wrap gap-2">
+                            <div class="text-muted">Първо изберете фризьор, услуга и дата</div>
+                        </div>
+                    </div>
+
+                    <!-- Резюме на избора -->
+                    <div id="selectionSummary" class="alert alert-info d-none mb-3">
+                        Избрали сте: <strong id="summaryText"></strong>
+                    </div>
+
+                    <!-- Скрити полета + бутон Резервирай -->
+                    <form id="appointmentForm" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="SelectedBarberId" id="hiddenBarberId" />
+                        <input type="hidden" asp-for="SelectedServiceId" id="hiddenServiceId" />
+                        <input type="hidden" asp-for="SelectedDate" id="hiddenDate" />
+                        <input type="hidden" asp-for="SelectedTime" id="hiddenTime" />
+
+                        <div class="d-grid">
+                            <button type="submit" id="submitBtn" class="btn btn-success btn-lg d-none">
+                                ✅ Резервирай
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const barberSelect = document.getElementById('barberSelect');
+        const serviceSelect = document.getElementById('serviceSelect');
+        const datePicker = document.getElementById('datePicker');
+        const timeSlotsContainer = document.getElementById('timeSlotsContainer');
+        const hiddenBarberId = document.getElementById('hiddenBarberId');
+        const hiddenServiceId = document.getElementById('hiddenServiceId');
+        const hiddenDate = document.getElementById('hiddenDate');
+        const hiddenTime = document.getElementById('hiddenTime');
+        const appointmentForm = document.getElementById('appointmentForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const selectionSummary = document.getElementById('selectionSummary');
+        const summaryText = document.getElementById('summaryText');
+
+        let currentServiceId = null;
+        let currentDuration = 0;
+        let selectedBarberName = '';
+        let selectedServiceName = '';
+        let selectedSlot = null;
+
+        function getToken() {
+            return document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        }
+
+        function updateSummary() {
+            if (selectedSlot && selectedBarberName && selectedServiceName && datePicker.value) {
+                summaryText.textContent = `${selectedBarberName} | ${selectedServiceName} | ${datePicker.value} в ${selectedSlot}`;
+                selectionSummary.classList.remove('d-none');
+                submitBtn.classList.remove('d-none');
+            } else {
+                selectionSummary.classList.add('d-none');
+                submitBtn.classList.add('d-none');
+            }
+        }
+
+        // Когато се избере фризьор
+        barberSelect.addEventListener('change', async function () {
+            const barberId = this.value;
+            selectedBarberName = this.options[this.selectedIndex]?.text || '';
+            selectedSlot = null;
+            hiddenTime.value = '';
+            updateSummary();
+
+            if (!barberId) {
+                serviceSelect.disabled = true;
+                serviceSelect.innerHTML = '<option value="">-- Изберете фризьор --</option>';
+                datePicker.disabled = true;
+                timeSlotsContainer.innerHTML = '<div class="text-muted">Първо изберете фризьор</div>';
+                return;
+            }
+
+            hiddenBarberId.value = barberId;
+
+            try {
+                const response = await fetch('/Appointments/Create?handler=LoadServices', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': getToken()
+                    },
+                    body: JSON.stringify({ barberId: parseInt(barberId) })
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const services = await response.json();
+
+                serviceSelect.disabled = false;
+                serviceSelect.innerHTML = '<option value="">-- Изберете услуга --</option>';
+
+                if (services.length === 0) {
+                    serviceSelect.innerHTML = '<option value="">-- Няма услуги за този фризьор --</option>';
+                } else {
+                    services.forEach(service => {
+                        const option = document.createElement('option');
+                        option.value = service.id;
+                        option.textContent = `${service.name} - ${service.price} лв. (${service.durationMinutes} мин.)`;
+                        option.dataset.duration = service.durationMinutes;
+                        option.dataset.name = service.name;
+                        serviceSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Грешка при зареждане на услуги:', error);
+                serviceSelect.innerHTML = '<option value="">-- Грешка при зареждане --</option>';
+            }
+        });
+
+        // Когато се избере услуга
+        serviceSelect.addEventListener('change', function () {
+            const serviceId = this.value;
+            const selectedOption = this.options[this.selectedIndex];
+            selectedServiceName = selectedOption?.dataset?.name || '';
+            selectedSlot = null;
+            hiddenTime.value = '';
+            updateSummary();
+
+            if (!serviceId) {
+                datePicker.disabled = true;
+                timeSlotsContainer.innerHTML = '<div class="text-muted">Първо изберете услуга</div>';
+                return;
+            }
+
+            currentServiceId = parseInt(serviceId);
+            currentDuration = parseInt(selectedOption.dataset.duration) || 30;
+            hiddenServiceId.value = currentServiceId;
+            datePicker.disabled = false;
+
+            if (datePicker.value) {
+                loadTimeSlots();
+            }
+        });
+
+        // Когато се избере дата
+        datePicker.addEventListener('change', function () {
+            selectedSlot = null;
+            hiddenTime.value = '';
+            updateSummary();
+
+            if (this.value && currentServiceId) {
+                loadTimeSlots();
+            }
+        });
+
+        // Зареждане на свободните часове
+        async function loadTimeSlots() {
+            const barberId = barberSelect.value;
+            const serviceId = currentServiceId;
+            const date = datePicker.value;
+
+            if (!barberId || !serviceId || !date) return;
+
+            timeSlotsContainer.innerHTML = '<div class="text-muted">Зареждане на свободни часове...</div>';
+            hiddenDate.value = date;
+
+            try {
+                const response = await fetch('/Appointments/Create?handler=LoadAvailableSlots', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': getToken()
+                    },
+                    body: JSON.stringify({
+                        barberId: parseInt(barberId),
+                        serviceId: serviceId,
+                        date: date
+                    })
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const slots = await response.json();
+
+                if (slots.length === 0) {
+                    timeSlotsContainer.innerHTML = '<div class="text-muted">Няма свободни часове за тази дата</div>';
+                    return;
+                }
+
+                timeSlotsContainer.innerHTML = '';
+                slots.forEach(slot => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'btn btn-outline-primary time-slot-btn';
+                    btn.textContent = slot;
+                    btn.addEventListener('click', () => selectTimeSlot(slot, btn));
+                    timeSlotsContainer.appendChild(btn);
+                });
+            } catch (error) {
+                console.error('Грешка при зареждане на часове:', error);
+                timeSlotsContainer.innerHTML = '<div class="text-danger">Грешка при зареждане на часовете</div>';
+            }
+        }
+
+        // Избор на час - само маркира, НЕ изпраща формата
+        function selectTimeSlot(time, clickedBtn) {
+            document.querySelectorAll('.time-slot-btn').forEach(btn => {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-outline-primary');
+            });
+
+            clickedBtn.classList.remove('btn-outline-primary');
+            clickedBtn.classList.add('btn-primary');
+
+            selectedSlot = time;
+            hiddenTime.value = time;
+            updateSummary();
+        }
+    </script>
+
+    <style>
+        .time-slot-btn {
+            min-width: 80px;
+            margin: 5px;
+            transition: all 0.2s;
+        }
+
+            .time-slot-btn:hover {
+                transform: scale(1.02);
+            }
+    </style>
+}
