@@ -1,0 +1,86 @@
+﻿@page
+@model SalonBooker.Pages.Admin.IndexModel
+@{
+    ViewData["Title"] = "Админ панел";
+    Layout = "/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">🔧 Административен панел</h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            ✅ @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h1 class="display-4 text-primary">@Model.UsersCount</h1>
+                    <p class="card-text">👥 Потребители</p>
+                    <a asp-page="./Users" class="btn btn-outline-primary btn-sm">Управление</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h1 class="display-4 text-warning">@Model.BarbersCount</h1>
+                    <p class="card-text">✂️ Фризьори</p>
+                    <a asp-page="./Barbers" class="btn btn-outline-warning btn-sm">Управление</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h1 class="display-4 text-info">@Model.ServicesCount</h1>
+                    <p class="card-text">💇 Услуги</p>
+                    <a asp-page="./Services" class="btn btn-outline-info btn-sm">Управление</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h1 class="display-4 text-success">@Model.AppointmentsCount</h1>
+                    <p class="card-text">📅 Резервации</p>
+                    <a asp-page="./Appointments" class="btn btn-outline-success btn-sm">Управление</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">⚠️ Активни потребители</h5>
+                </div>
+                <div class="card-body">
+                    <p>Активни: <strong>@Model.ActiveUsersCount</strong></p>
+                    <p>Блокирани: <strong>@Model.BlockedUsersCount</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">📊 Статистика за резервации</h5>
+                </div>
+                <div class="card-body">
+                    <p>Активни резервации: <strong>@Model.ActiveAppointmentsCount</strong></p>
+                    <p>Изпълнени: <strong>@Model.CompletedAppointmentsCount</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

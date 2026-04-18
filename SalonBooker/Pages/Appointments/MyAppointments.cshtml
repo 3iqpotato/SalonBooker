@@ -1,4 +1,136 @@
 ﻿@page
-@model SalonBooker.Pages.Appointments.MyAppointmentsModel
+@model MyAppointmentsModel
 @{
+    ViewData["Title"] = "Моите часове";
 }
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">📋 Моите часове</h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            @TempData["WarningMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Бъдещи резервации -->
+    <div class="mb-5">
+        <h3 class="mb-3">📅 Предстоящи часове</h3>
+        @if (Model.UpcomingAppointments.Any())
+        {
+            <div class="row">
+                @foreach (var appointment in Model.UpcomingAppointments)
+                {
+                    <div class="col-md-6 mb-3">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h5 class="card-title">✂️ @appointment.ServiceName</h5>
+                                    @if (appointment.CanCancel)
+                                    {
+                                        <span class="badge bg-warning text-dark">Може да се откаже</span>
+                                    }
+                                </div>
+                                <p class="card-text mt-2">
+                                    <strong>💇 Фризьор:</strong> @appointment.BarberName<br />
+                                    <strong>💰 Цена:</strong> @appointment.ServicePrice лв.<br />
+                                    <strong>⏱️ Продължителност:</strong> @appointment.ServiceDuration мин.<br />
+                                    <strong>📅 Дата:</strong> @appointment.StartTime.ToString("dd.MM.yyyy")<br />
+                                    <strong>🕐 Час:</strong> @appointment.StartTime.ToString("HH:mm") - @appointment.EndTime.ToString("HH:mm")
+                                </p>
+                                @if (appointment.CanCancel)
+                                {
+                                    <div class="alert alert-sm alert-info mt-2">
+                                        ⚠️ При отказ:
+                                        @if (appointment.PointsToLose == 1)
+                                        {
+                                            <span>Ще загубите <strong>1 точка</strong> (повече от 2 дни преди часа)</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Ще загубите <strong>5 точки</strong> (по-малко от 2 дни преди часа)</span>
+                                        }
+                                    </div>
+                                    <form method="post" asp-page-handler="Cancel" onsubmit="return confirm('Наистина ли искате да откажете този час? Ще загубите @appointment.PointsToLose точки.');">
+                                        <input type="hidden" name="id" value="@appointment.Id" />
+                                        <button type="submit" class="btn btn-danger w-100">❌ Откажи час</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-secondary w-100" disabled>⏳ Не може да се откаже</button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                Нямате предстоящи часове. <a asp-page="/Appointments/Create" class="alert-link">Направете нова резервация</a>.
+            </div>
+        }
+    </div>
+
+    <!-- Минали резервации -->
+    <div>
+        <h3 class="mb-3">📜 История</h3>
+        @if (Model.PastAppointments.Any())
+        {
+            <div class="row">
+                @foreach (var appointment in Model.PastAppointments)
+                {
+                    <div class="col-md-6 mb-3">
+                        <div class="card shadow-sm bg-light">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h5 class="card-title">✂️ @appointment.ServiceName</h5>
+                                    @if (appointment.IsCompleted)
+                                    {
+                                        <span class="badge bg-success">✅ Изпълнен</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">⏰ Изтекъл</span>
+                                    }
+                                </div>
+                                <p class="card-text mt-2">
+                                    <strong>💇 Фризьор:</strong> @appointment.BarberName<br />
+                                    <strong>💰 Цена:</strong> @appointment.ServicePrice лв.<br />
+                                    <strong>📅 Дата:</strong> @appointment.StartTime.ToString("dd.MM.yyyy")<br />
+                                    <strong>🕐 Час:</strong> @appointment.StartTime.ToString("HH:mm") - @appointment.EndTime.ToString("HH:mm")
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-secondary">
+                Нямате история на резервации.
+            </div>
+        }
+    </div>
+</div>

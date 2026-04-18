@@ -1,0 +1,33 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using SalonBooker.Models
+@using SalonBooker.Data
+@using Microsoft.EntityFrameworkCore;
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@inject ApplicationDbContext DbContext
+
+@{
+    var currentUser = await UserManager.GetUserAsync(User);
+    var isBarber = false;
+    if (currentUser != null)
+    {
+        isBarber = await DbContext.Barbers.AnyAsync(b => b.UserId == currentUser.Id);
+    }
+}
+
+<ul class="nav nav-pills flex-column">
+    <li class="nav-item">
+        <a class="nav-link @ManageNavPages.IndexNavClass(ViewContext)" id="profile" asp-page="./Index">👤 Потребителски профил</a>
+    </li>
+
+    @if (isBarber)
+    {
+        <li class="nav-item">
+            <a class="nav-link @ManageNavPages.BarberProfileNavClass(ViewContext)" id="barber-profile" asp-page="./BarberProfile">✂️ Фризьорски профил</a>
+        </li>
+    }
+
+    <li class="nav-item">
+        <a class="nav-link @ManageNavPages.ChangePasswordNavClass(ViewContext)" id="change-password" asp-page="./ChangePassword">🔑 Смяна на парола</a>
+    </li>
+</ul>

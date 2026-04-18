@@ -9,10 +9,12 @@
 @{
     var currentUser = await UserManager.GetUserAsync(User);
     bool isBarber = false;
+    bool isAdmin = false;
 
     if (currentUser != null)
     {
         isBarber = await DbContext.Barbers.AnyAsync(b => b.UserId == currentUser.Id);
+        isAdmin = await UserManager.IsInRoleAsync(currentUser, "Admin");
     }
 }
 
@@ -23,6 +25,14 @@
         <li class="nav-item">
             <a class="nav-link text-dark" asp-page="/Index">Начало</a>
         </li>
+
+        // Админ бутон (само за администратори)
+        @if (isAdmin)
+        {
+            <li class="nav-item">
+                <a class="nav-link text-dark fw-bold" asp-page="/Admin/Index">🔧 Админ панел</a>
+            </li>
+        }
 
         if (isBarber)
         {

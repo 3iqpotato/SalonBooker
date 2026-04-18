@@ -1,0 +1,122 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Моят профил";
+    Layout = "/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <partial name="_ManageNav" />
+        </div>
+        <div class="col-md-9">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">👤 Потребителски профил</h3>
+                </div>
+                <div class="card-body">
+
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            ✅ @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (Model.EditMode != "user")
+                    {
+                        <div class="text-center mb-4">
+                            @if (!string.IsNullOrEmpty(Model.Input.ProfilePictureUrl))
+                            {
+                                <img src="@Model.Input.ProfilePictureUrl" class="rounded-circle"
+                                     style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #007bff;" />
+                            }
+                            else
+                            {
+                                <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center text-white"
+                                     style="width: 120px; height: 120px; font-size: 42px;">
+                                    @(Model.Input.FullName?.FirstOrDefault().ToString().ToUpper() ?? "?")
+                                </div>
+                            }
+                        </div>
+
+                        <dl class="row">
+                            <dt class="col-sm-4">📛 Пълно име</dt>
+                            <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Input.FullName) ? "—" : Model.Input.FullName)</dd>
+
+                            <dt class="col-sm-4">📧 Имейл</dt>
+                            <dd class="col-sm-8">@Model.Email</dd>
+
+                            <dt class="col-sm-4">📝 Биография</dt>
+                            <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Input.Bio) ? "—" : Model.Input.Bio)</dd>
+
+                            <dt class="col-sm-4">📞 Телефон</dt>
+                            <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Input.PhoneNumber) ? "—" : Model.Input.PhoneNumber)</dd>
+
+                            <dt class="col-sm-4">⭐ Точки</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge bg-warning text-dark">@Model.Points точки</span>
+                                @if (!Model.IsActive)
+                                {
+                                    <span class="badge bg-danger ms-1">⚠️ Блокиран</span>
+                                }
+                            </dd>
+
+                            <dt class="col-sm-4">📅 Регистриран на</dt>
+                            <dd class="col-sm-8">@Model.RegisteredAt.ToString("dd.MM.yyyy HH:mm")</dd>
+                        </dl>
+
+                        <div class="mt-3">
+                            <a asp-page="./Index" asp-route-editMode="user" class="btn btn-primary">✏️ Редактирай профила</a>
+                            <a asp-page="./ChangePassword" class="btn btn-outline-secondary">🔑 Смяна на парола</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <form method="post" asp-page-handler="User">
+                            @Html.AntiForgeryToken()
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.FullName" class="form-label fw-bold"></label>
+                                <input asp-for="Input.FullName" class="form-control" />
+                                <span asp-validation-for="Input.FullName" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.Bio" class="form-label fw-bold"></label>
+                                <textarea asp-for="Input.Bio" class="form-control" rows="3"></textarea>
+                                <span asp-validation-for="Input.Bio" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.ProfilePictureUrl" class="form-label fw-bold"></label>
+                                <input asp-for="Input.ProfilePictureUrl" class="form-control" placeholder="https://example.com/photo.jpg" />
+                                <div class="form-text">Линк към снимка от интернет</div>
+                                <span asp-validation-for="Input.ProfilePictureUrl" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.PhoneNumber" class="form-label fw-bold"></label>
+                                <input asp-for="Input.PhoneNumber" class="form-control" placeholder="+359 888 123 456" />
+                                <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <button type="submit" class="btn btn-success">💾 Запази</button>
+                                <a asp-page="./Index" class="btn btn-secondary">❌ Отказ</a>
+                            </div>
+                        </form>
+                    }
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

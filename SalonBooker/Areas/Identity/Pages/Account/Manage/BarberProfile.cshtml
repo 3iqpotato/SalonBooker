@@ -1,0 +1,107 @@
+﻿@page
+@model BarberProfileModel
+@{
+    ViewData["Title"] = "Фризьорски профил";
+    Layout = "/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <partial name="_ManageNav" />
+        </div>
+        <div class="col-md-9">
+            <div class="card shadow-sm border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="mb-0">✂️ Фризьорски профил</h3>
+                </div>
+                <div class="card-body">
+
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            ✅ @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            ❌ @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (Model.EditMode == "edit")
+                    {
+                        <form method="post">
+                            @Html.AntiForgeryToken()
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.Bio" class="form-label fw-bold">📝 Биография</label>
+                                <textarea asp-for="Input.Bio" class="form-control" rows="4"
+                                          placeholder="Опишете вашия опит, специализации и умения..."></textarea>
+                                <span asp-validation-for="Input.Bio" class="text-danger"></span>
+                                <div class="form-text">Тази биография ще се показва на началната страница.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.ProfileImageUrl" class="form-label fw-bold">🖼️ Профилна снимка (URL)</label>
+                                <input asp-for="Input.ProfileImageUrl" class="form-control"
+                                       placeholder="https://example.com/barber-photo.jpg" />
+                                <span asp-validation-for="Input.ProfileImageUrl" class="text-danger"></span>
+                                <div class="form-text">Линк към снимка от интернет (Imgur, Flickr и др.)</div>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <button type="submit" class="btn btn-warning">💾 Запази промените</button>
+                                <a asp-page="./BarberProfile" class="btn btn-secondary">❌ Отказ</a>
+                            </div>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="text-center mb-4">
+                            @if (!string.IsNullOrEmpty(Model.BarberData.ProfileImageUrl))
+                            {
+                                <img src="@Model.BarberData.ProfileImageUrl" class="rounded-circle"
+                                     style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #ffc107;" />
+                            }
+                            else
+                            {
+                                <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center text-white"
+                                     style="width: 150px; height: 150px; font-size: 48px;">
+                                    ✂️
+                                </div>
+                            }
+                        </div>
+
+                        <dl class="row">
+                            <dt class="col-sm-4">📛 Име</dt>
+                            <dd class="col-sm-8">@Model.FullName</dd>
+
+                            <dt class="col-sm-4">📧 Имейл</dt>
+                            <dd class="col-sm-8">@Model.Email</dd>
+
+                            <dt class="col-sm-4">📝 Биография</dt>
+                            <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.BarberData.Bio) ? "—" : Model.BarberData.Bio)</dd>
+
+                            <dt class="col-sm-4">🕐 Работно време</dt>
+                            <dd class="col-sm-8">@Model.WorkStartTime.ToString(@"hh\:mm") - @Model.WorkEndTime.ToString(@"hh\:mm")</dd>
+                        </dl>
+
+                        <div class="d-flex justify-content-between mt-3">
+                            <a asp-page="./BarberProfile" asp-route-editMode="edit" class="btn btn-warning">✏️ Редактирай фризьорския профил</a>
+                        </div>
+                    }
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

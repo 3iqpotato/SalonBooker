@@ -1,4 +1,212 @@
 ﻿@page
-@model SalonBooker.Pages.Appointments.TodayModel
+@model TodayModel
 @{
+    ViewData["Title"] = "Днешните часове";
+}
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">📅 Управление на часовете</h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            @TempData["WarningMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Избор на дата -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <label class="form-label fw-bold">Изберете дата:</label>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var date in Model.AvailableDates)
+                {
+                    <a asp-page="/Appointments/Today" asp-route-SelectedDate="@date.ToString("yyyy-MM-dd")"
+                       class="btn @(date.Date == Model.SelectedDate.Date ? "btn-primary" : "btn-outline-secondary")">
+                        @date.ToString("dd.MM.yyyy")
+                        @(date.Date == DateTime.Today ? "(Днес)" : "")
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Резервации за избраната дата -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">📋 Резервации за @Model.SelectedDate.ToString("dd.MM.yyyy")</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.CurrentAppointments.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Час</th>
+                                <th>Клиент</th>
+                                <th>Услуга</th>
+                                <th>Цена</th>
+                                <th>Статус</th>
+                                <th>Действие</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var app in Model.CurrentAppointments)
+                            {
+                                <tr class="table-@app.StatusColor">
+                                    <td>@app.StartTime.ToString("HH:mm") - @app.EndTime.ToString("HH:mm")</td>
+                                    <td>
+                                        <strong>@app.ClientName</strong><br />
+                                        <small class="text-muted">@app.ClientEmail</small>
+                                    </td>
+                                    <td>@app.ServiceName (@app.ServiceDuration мин.)</td>
+                                    <td>@app.ServicePrice лв.</td>
+                                    <td>
+                                        @if (app.IsCompleted)
+                                        {
+                                            <span class="badge bg-success">✅ Изпълнена</span>
+                                        }
+                                        else if (app.StartTime < DateTime.Now)
+                                        {
+                                            <span class="badge bg-danger">⏰ Изтекла - чака маркиране</span>
+                                        }
+                                        else if ((app.StartTime - DateTime.Now).TotalMinutes <= 30)
+                                        {
+                                            <span class="badge bg-warning text-dark">⚠️ Започва скоро</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-info">⏳ Предстояща</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (app.CanMark)
+                                        {
+                                            <div class="btn-group btn-group-sm">
+                                                <form method="post" asp-page-handler="MarkAsCompleted" style="display:inline">
+                                                    <input type="hidden" name="appointmentId" value="@app.Id" />
+                                                    <button type="submit" class="btn btn-success" onclick="return confirm('Маркирай като изпълнена? Клиентът ще получи +5 точки.');">
+                                                        ✅ Изпълнена
+                                                    </button>
+                                                </form>
+                                                <form method="post" asp-page-handler="MarkAsNoShow" style="display:inline">
+                                                    <input type="hidden" name="appointmentId" value="@app.Id" />
+                                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Маркирай като неявяване? Клиентът ще загуби 5 точки.');">
+                                                        ❌ Не се яви
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info text-center mb-0">
+                    Няма резервации за тази дата.
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Минали неизпълнени резервации (за дните преди днес) -->
+    @if (Model.PastUnmarkedAppointments.Any())
+    {
+        <div class="card shadow-sm border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">⚠️ Чакащи маркиране (от предишни дни)</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <strong>Внимание!</strong> Тези резервации са от минали дни и все още не са маркирани. Моля, маркирайте ги.
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Дата и час</th>
+                                <th>Клиент</th>
+                                <th>Услуга</th>
+                                <th>Цена</th>
+                                <th>Действие</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var app in Model.PastUnmarkedAppointments)
+                            {
+                                <tr class="table-warning">
+                                    <td>@app.StartTime.ToString("dd.MM.yyyy HH:mm") - @app.EndTime.ToString("HH:mm")</td>
+                                    <td>
+                                        <strong>@app.ClientName</strong><br />
+                                        <small class="text-muted">@app.ClientEmail</small>
+                                    </td>
+                                    <td>@app.ServiceName (@app.ServiceDuration мин.)</td>
+                                    <td>@app.ServicePrice лв.</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <form method="post" asp-page-handler="MarkAsCompleted" style="display:inline">
+                                                <input type="hidden" name="appointmentId" value="@app.Id" />
+                                                <button type="submit" class="btn btn-success" onclick="return confirm('Маркирай като изпълнена? Клиентът ще получи +5 точки.');">
+                                                    ✅ Изпълнена
+                                                </button>
+                                            </form>
+                                            <form method="post" asp-page-handler="MarkAsNoShow" style="display:inline">
+                                                <input type="hidden" name="appointmentId" value="@app.Id" />
+                                                <button type="submit" class="btn btn-danger" onclick="return confirm('Маркирай като неявяване? Клиентът ще загуби 5 точки.');">
+                                                    ❌ Не се яви
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <style>
+        .table-danger {
+            background-color: #f8d7da !important;
+        }
+        .table-warning {
+            background-color: #fff3cd !important;
+        }
+        .table-success {
+            background-color: #d1e7dd !important;
+        }
+        .table-info {
+            background-color: #cff4fc !important;
+        }
+    </style>
 }
