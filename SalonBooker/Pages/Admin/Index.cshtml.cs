@@ -31,18 +31,6 @@ namespace SalonBooker.Pages.Admin
 
         public async Task<IActionResult> OnGetAsync()
         {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return RedirectToPage("/Account/Login");
-            }
-
-            //var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
-            //if (!isAdmin)
-            //{
-            //    return Forbid(); // Връща 403 Access Denied
-            //}
-
             UsersCount = await _context.Users.CountAsync();
             ActiveUsersCount = await _context.Users.CountAsync(u => u.IsActive);
             BlockedUsersCount = UsersCount - ActiveUsersCount;
@@ -53,7 +41,6 @@ namespace SalonBooker.Pages.Admin
                 .CountAsync(a => !a.IsCompleted && a.StartTime > DateTime.Now);
             CompletedAppointmentsCount = await _context.Appointments
                 .CountAsync(a => a.IsCompleted);
-
             return Page();
         }
     }

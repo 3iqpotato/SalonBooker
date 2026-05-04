@@ -95,5 +95,33 @@ namespace SalonBooker.Pages.Admin
             }
             return RedirectToPage(new { searchTerm = SearchTerm, currentPage = CurrentPage });
         }
+
+        public async Task<IActionResult> OnPostAddPointsAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user != null)
+            {
+                user.Points += 10;
+                if (!user.IsActive && user.Points > 0)
+                    user.IsActive = true;
+                await _userManager.UpdateAsync(user);
+                TempData["SuccessMessage"] = $"Добавени 10 точки на {user.FullName}. Общо: {user.Points}";
+            }
+            return RedirectToPage(new { searchTerm = SearchTerm, currentPage = CurrentPage });
+        }
+
+        public async Task<IActionResult> OnPostRemovePointsAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user != null)
+            {
+                user.Points = Math.Max(0, user.Points - 10);
+                await _userManager.UpdateAsync(user);
+                TempData["SuccessMessage"] = $"Махнати 10 точки от {user.FullName}. Общо: {user.Points}";
+            }
+            return RedirectToPage(new { searchTerm = SearchTerm, currentPage = CurrentPage });
+        }
     }
+
+
 }

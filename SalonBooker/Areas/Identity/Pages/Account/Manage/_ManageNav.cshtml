@@ -1,18 +1,13 @@
 ﻿@using Microsoft.AspNetCore.Identity
 @using SalonBooker.Models
-@using SalonBooker.Data
-@using Microsoft.EntityFrameworkCore;
-@inject SignInManager<ApplicationUser> SignInManager
+@using SalonBooker.Services.Interfaces
+@using SalonBooker.Areas.Identity.Pages.Account.Manage
 @inject UserManager<ApplicationUser> UserManager
-@inject ApplicationDbContext DbContext
-
+@inject IUserService UserService
 @{
     var currentUser = await UserManager.GetUserAsync(User);
-    var isBarber = false;
-    if (currentUser != null)
-    {
-        isBarber = await DbContext.Barbers.AnyAsync(b => b.UserId == currentUser.Id);
-    }
+    var isBarber = currentUser != null
+        && await UserService.IsBarberAsync(currentUser.Id);
 }
 
 <ul class="nav nav-pills flex-column">

@@ -1,0 +1,121 @@
+﻿@page
+@model SalonBooker.Pages.Admin.BarbersModel
+@{
+    ViewData["Title"] = "Управление на фризьори";
+    Layout = "/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4 pb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>✂️ Управление на фризьори</h2>
+        <a asp-page="./Index" class="btn btn-secondary">← Назад</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            ✅ @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            ❌ @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Добавяне на нов фризьор -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">➕ Добави фризьор</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Потребителят трябва да има регистриран акаунт. Въведи имейла му.</p>
+            <form method="post" asp-page-handler="AddBarber">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input type="email" name="email" class="form-control"
+                               placeholder="Имейл на потребителя" required />
+                    </div>
+                    <div class="col-md-3">
+                        <input type="time" name="workStart" class="form-control"
+                               value="09:00" required />
+                        <div class="form-text">Начало на работния ден</div>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="time" name="workEnd" class="form-control"
+                               value="18:00" required />
+                        <div class="form-text">Край на работния ден</div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-warning mt-3">✂️ Направи фризьор</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Списък с фризьори -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">📋 Всички фризьори</h5>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Име</th>
+                        <th>Имейл</th>
+                        <th>Работно време</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var barber in Model.Barbers)
+                    {
+                        <tr>
+                            <td>@barber.FullName</td>
+                            <td>@barber.Email</td>
+                            <td>@barber.WorkStart - @barber.WorkEnd</td>
+                            <td>
+                                @if (barber.IsActive)
+                                {
+                                    <span class="badge bg-success">Активен</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Блокиран</span>
+                                }
+                            </td>
+                            <td>
+                                <form method="post" asp-page-handler="ToggleBarber" style="display:inline">
+                                    <input type="hidden" name="barberId" value="@barber.BarberId" />
+                                    @if (barber.IsActive)
+                                    {
+                                        <button type="submit" class="btn btn-danger btn-sm"
+                                                onclick="return confirm('Блокирай фризьора?')">
+                                            🔒 Блокирай
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="submit" class="btn btn-success btn-sm"
+                                                onclick="return confirm('Активирай фризьора?')">
+                                            🔓 Активирай
+                                        </button>
+                                    }
+                                </form>
+                                <a asp-page="./BarberServices" asp-route-barberId="@barber.BarberId"
+                                   class="btn btn-info btn-sm ms-1">
+                                    ✂️ Услуги
+                                </a>
+                            </td>
+    
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

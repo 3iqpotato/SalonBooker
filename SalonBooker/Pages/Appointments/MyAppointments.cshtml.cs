@@ -115,6 +115,7 @@ namespace SalonBooker.Pages.Appointments
                 return RedirectToPage();
             }
 
+
             // Проверка дали може да се откаже
             if (appointment.IsCompleted)
             {
@@ -125,6 +126,15 @@ namespace SalonBooker.Pages.Appointments
             if (appointment.StartTime <= DateTime.Now)
             {
                 TempData["ErrorMessage"] = "Не можете да откажете резервация, която вече е минала.";
+                return RedirectToPage();
+            }
+
+            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+            if (isAdmin)
+            {
+                _context.Appointments.Remove(appointment);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Резервацията е отказана.";
                 return RedirectToPage();
             }
 

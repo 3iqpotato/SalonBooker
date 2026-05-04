@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.36221.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SalonBooker", "SalonBooker\SalonBooker.csproj", "{8E3D33C3-9B7F-4AC5-9983-7577F133386D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SalonBooker.Tests", "SalonBooker.Tests\SalonBooker.Tests.csproj", "{1F74414C-AB17-48F5-9E02-6C7E30E74D45}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{8E3D33C3-9B7F-4AC5-9983-7577F133386D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8E3D33C3-9B7F-4AC5-9983-7577F133386D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8E3D33C3-9B7F-4AC5-9983-7577F133386D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F74414C-AB17-48F5-9E02-6C7E30E74D45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F74414C-AB17-48F5-9E02-6C7E30E74D45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F74414C-AB17-48F5-9E02-6C7E30E74D45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F74414C-AB17-48F5-9E02-6C7E30E74D45}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

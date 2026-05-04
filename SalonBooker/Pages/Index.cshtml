@@ -2,11 +2,10 @@
 @model IndexModel
 @using Microsoft.AspNetCore.Identity
 @using SalonBooker.Models
-@using SalonBooker.Data
-@using Microsoft.EntityFrameworkCore
+@using SalonBooker.Services.Interfaces
 @inject SignInManager<ApplicationUser> SignInManager
+@inject IUserService UserService
 @inject UserManager<ApplicationUser> UserManager
-@inject ApplicationDbContext DbContext
 @{
     ViewData["Title"] = "Начало";
 
@@ -15,7 +14,7 @@
 
     if (currentUserForButton != null)
     {
-        isUserBarber = await DbContext.Barbers.AnyAsync(b => b.UserId == currentUserForButton.Id);
+        isUserBarber = await UserService.IsBarberAsync(currentUserForButton.Id);
     }
 }
 

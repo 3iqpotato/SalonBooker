@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SalonBooker.Data;
 using SalonBooker.Models;
+using SalonBooker.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 
 namespace SalonBooker.Pages.Appointments
@@ -12,24 +13,25 @@ namespace SalonBooker.Pages.Appointments
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IAppointmentService _appointmentService;
+        private readonly IUserService _userService;
 
-        public CreateModel(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public CreateModel(
+            ApplicationDbContext context,
+            UserManager<ApplicationUser> userManager,
+            IAppointmentService appointmentService,
+            IUserService userService)
         {
             _context = context;
             _userManager = userManager;
+            _appointmentService = appointmentService;
+            _userService = userService;
         }
 
-        [BindProperty]
-        public int SelectedBarberId { get; set; }
-
-        [BindProperty]
-        public int SelectedServiceId { get; set; }
-
-        [BindProperty]
-        public string SelectedDate { get; set; } = string.Empty;
-
-        [BindProperty]
-        public string SelectedTime { get; set; } = string.Empty;
+        [BindProperty] public int SelectedBarberId { get; set; }
+        [BindProperty] public int SelectedServiceId { get; set; }
+        [BindProperty] public string SelectedDate { get; set; } = string.Empty;
+        [BindProperty] public string SelectedTime { get; set; } = string.Empty;
 
         public List<SelectListItem> Barbers { get; set; } = new();
 
@@ -84,69 +86,10 @@ namespace SalonBooker.Pages.Appointments
 
         public async Task<IActionResult> OnPostLoadAvailableSlotsAsync([FromBody] LoadSlotsRequest request)
         {
-            var service = await _context.Services.FindAsync(request.ServiceId);
-            if (service == null)
-                return new JsonResult(new List<string>());
+            var slots = await _appointmentService.GetAvailableSlotsAsync(
+                request.BarberId, request.ServiceId, request.Date);
 
-            var barber = await _context.Barbers.FindAsync(request.BarberId);
-            if (barber == null)
-                return new JsonResult(new List<string>());
-
-            var workStart = barber.WorkStartTime.ToTimeSpan();
-            var workEnd = barber.WorkEndTime.ToTimeSpan();
-            var slotDuration = barber.SlotDurationMinutes;
-
-            // Генерираме слотове - слотът трябва да свършва преди края на работния ден
-            var allSlots = new List<TimeSpan>();
-            var currentTime = workStart;
-
-            while (currentTime + TimeSpan.FromMinutes(service.DurationMinutes) <= workEnd)
-            {
-                allSlots.Add(currentTime);
-                currentTime = currentTime.Add(TimeSpan.FromMinutes(slotDuration));
-            }
-
-            // Ако датата е днес - филтрираме минали часове
-            if (request.Date.Date == DateTime.Today)
-            {
-                var nowTime = DateTime.Now.TimeOfDay.Add(TimeSpan.FromMinutes(15)); // 15 мин. буфер
-                allSlots = allSlots.Where(s => s > nowTime).ToList();
-            }
-
-            var dateStart = request.Date.Date;
-            var dateEnd = request.Date.Date.AddDays(1);
-
-            var bookedAppointments = await _context.Appointments
-                .Where(a => a.BarberId == request.BarberId
-                    && a.StartTime >= dateStart
-                    && a.StartTime < dateEnd)
-                .Select(a => new { a.StartTime, a.EndTime })
-                .ToListAsync();
-
-            var freeSlots = new List<string>();
-
-            foreach (var slot in allSlots)
-            {
-                var slotStart = request.Date.Date + slot;
-                var slotEnd = slotStart.Add(TimeSpan.FromMinutes(service.DurationMinutes));
-                bool isFree = true;
-
-                foreach (var booked in bookedAppointments)
-                {
-                    if (slotStart < booked.EndTime && slotEnd > booked.StartTime)
-                    {
-                        isFree = false;
-                        break;
-                    }
-                }
-
-                if (isFree)
-                {
-                    freeSlots.Add(slot.ToString(@"hh\:mm"));
-                }
-            }
-
-            return new JsonResult(freeSlots);
+            return new JsonResult(slots);
         }
 
         public async Task<IActionResult> OnPostAsync()
@@ -155,29 +98,11 @@ namespace SalonBooker.Pages.Appointments
             if (user == null)
                 return RedirectToPage("/Account/Login");
 
-            // Проверка дали потребителят е активен
-            if (!user.IsActive)
+            // Проверки за потребителя през service
+            var cannotBookReason = await _userService.GetCannotBookReasonAsync(user.Id);
+            if (cannotBookReason != null)
             {
-                TempData["ErrorMessage"] = "Акаунтът ви е блокиран. Не можете да правите резервации.";
-                return RedirectToPage("/Index");
-            }
-
-            // Проверка за точки - трябват поне 1 точка
-            if (user.Points <= 0)
-            {
-                TempData["ErrorMessage"] = "Нямате достатъчно точки за нова резервация.";
-                return RedirectToPage("/Index");
-            }
-
-            // Проверка за максимален брой активни резервации (2)
-            var activeBookings = await _context.Appointments
-                .CountAsync(a => a.ClientUserId == user.Id
-                    && !a.IsCompleted
-                    && a.StartTime > DateTime.Now);
-
-            if (activeBookings >= 2)
-            {
-                TempData["ErrorMessage"] = "Можете да имате максимум 2 активни резервации.";
+                TempData["ErrorMessage"] = cannotBookReason;
                 return RedirectToPage("/Index");
             }
 
@@ -220,13 +145,8 @@ namespace SalonBooker.Pages.Appointments
                 return RedirectToPage();
             }
 
-            // Проверка дали часът все още е свободен
-            var isStillFree = !await _context.Appointments.AnyAsync(a =>
-                a.BarberId == SelectedBarberId &&
-                a.StartTime < endTime &&
-                a.EndTime > startTime);
-
-            if (!isStillFree)
+            // Race condition проверка през service
+            if (!await _appointmentService.IsSlotFreeAsync(SelectedBarberId, startTime, endTime))
             {
                 TempData["ErrorMessage"] = "Този час вече е зает. Моля, изберете друг.";
                 return RedirectToPage();

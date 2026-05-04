@@ -53,6 +53,7 @@
                                 <td>@user.Email</td>
                                 <td>@(string.IsNullOrEmpty(user.PhoneNumber) ? "—" : user.PhoneNumber)</td>
                                 <td><span class="badge bg-warning text-dark">@user.Points</span></td>
+             
                                 <td>
                                     @if (user.IsActive)
                                     {
@@ -94,6 +95,22 @@
                                                 🔓 Отблокирай
                                             </button>
                                         }
+                                    </form>
+
+                                    <form method="post" asp-page-handler="AddPoints" style="display:inline">
+                                        <input type="hidden" name="userId" value="@user.Id" />
+                                        <button type="submit" class="btn btn-success btn-sm"
+                                                onclick="return confirm('Добави 10 точки?')">
+                                            ⭐ +10
+                                        </button>
+                                    </form>
+
+                                    <form method="post" asp-page-handler="RemovePoints" style="display:inline">
+                                        <input type="hidden" name="userId" value="@user.Id" />
+                                        <button type="submit" class="btn btn-warning btn-sm"
+                                                onclick="return confirm('Махни 10 точки?')">
+                                            ➖ -10
+                                        </button>
                                     </form>
                                 </td>
                             </tr>
