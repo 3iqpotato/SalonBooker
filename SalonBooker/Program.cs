@@ -49,8 +49,8 @@ app.MapRazorPages()
 
 app.Run();
 
-builder.Services.AddRazorPages()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.PropertyNamingPolicy = null;
-    });
+//builder.Services.AddRazorPages()
+//    .AddJsonOptions(options =>
+//    {
+//        options.JsonSerializerOptions.PropertyNamingPolicy = null;
+//    });

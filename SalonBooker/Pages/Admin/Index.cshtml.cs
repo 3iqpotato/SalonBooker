@@ -8,7 +8,7 @@ using SalonBooker.Models;
 
 namespace SalonBooker.Pages.Admin
 {
-    [Authorize]  // Само логнати, без конкретна роля
+    [Authorize(Roles = "Admin")] 
     public class IndexModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -37,11 +37,11 @@ namespace SalonBooker.Pages.Admin
                 return RedirectToPage("/Account/Login");
             }
 
-            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
-            if (!isAdmin)
-            {
-                return Forbid(); // Връща 403 Access Denied
-            }
+            //var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+            //if (!isAdmin)
+            //{
+            //    return Forbid(); // Връща 403 Access Denied
+            //}
 
             UsersCount = await _context.Users.CountAsync();
             ActiveUsersCount = await _context.Users.CountAsync(u => u.IsActive);

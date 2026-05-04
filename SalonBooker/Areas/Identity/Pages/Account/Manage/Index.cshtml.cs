@@ -87,7 +87,7 @@ namespace SalonBooker.Areas.Identity.Pages.Account.Manage
             Input.PhoneNumber = user.PhoneNumber;
         }
 
-        public async Task<IActionResult> OnPostAsync()
+        public async Task<IActionResult> OnPostUserAsync()
         {
             _logger.LogInformation("[USER SAVE] Получена POST заявка за потребителски профил.");
 
