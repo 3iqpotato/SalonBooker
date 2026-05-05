@@ -41,7 +41,7 @@
                 <p class="mb-1"><strong>⏱️ Продължителност на слот</strong></p>
                 <p class="text-muted">@Model.Barber.SlotDurationMinutes минути</p>
 
-                @if (User.Identity?.IsAuthenticated == true)
+                @if (Model.CanBook)
                 {
                     <a asp-page="/Appointments/Create" class="btn btn-warning w-100 mt-2">
                         📅 Запази час

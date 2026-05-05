@@ -1,5 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using SalonBooker.Data;
+using SalonBooker.Models;
 using SalonBooker.Services.Interfaces;
 
 namespace SalonBooker.Services
@@ -7,10 +9,14 @@ namespace SalonBooker.Services
     public class UserService : IUserService
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public UserService(ApplicationDbContext context)
+        public UserService(
+            ApplicationDbContext context,
+            UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         public async Task<bool> IsBarberAsync(string userId)
@@ -21,9 +27,14 @@ namespace SalonBooker.Services
             var user = await _context.Users.FindAsync(userId);
             if (user == null) return null;
 
-            var isAdmin = await _context.UserRoles.AnyAsync(ur => ur.UserId == userId &&_context.Roles.Any(r => r.Id == ur.RoleId && r.Name == "Admin"));
-            
-            if (isAdmin) return null;
+            // ПРЕДИ: директна заявка в UserRoles + Roles таблиците
+            // var isAdmin = await _context.UserRoles.AnyAsync(ur =>
+            //     ur.UserId == userId &&
+            //     _context.Roles.Any(r => r.Id == ur.RoleId && r.Name == "Admin"));
+
+            // СЛЕД: готовият Identity метод
+            if (await _userManager.IsInRoleAsync(user, "Admin"))
+                return null;
 
             if (!user.IsActive)
                 return "Акаунтът ви е блокиран. Не можете да правите резервации.";

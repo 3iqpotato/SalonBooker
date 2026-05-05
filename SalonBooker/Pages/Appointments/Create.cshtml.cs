@@ -98,6 +98,12 @@ namespace SalonBooker.Pages.Appointments
             if (user == null)
                 return RedirectToPage("/Account/Login");
 
+            if (await _userService.IsBarberAsync(user.Id))
+            {
+                TempData["ErrorMessage"] = "Фризьорите не могат да правят резервации.";
+                return RedirectToPage("/Index");
+            }
+
             // Проверки за потребителя през service
             var cannotBookReason = await _userService.GetCannotBookReasonAsync(user.Id);
             if (cannotBookReason != null)
